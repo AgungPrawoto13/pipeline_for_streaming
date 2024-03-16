@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 from pathlib import Path
 from pyspark.sql.functions import sum as pyspark_sum
-from pyspark.sql.functions import from_json, window, col
+from pyspark.sql.functions import from_json, window, col, count
 from pyspark.sql.types import StructType, StringType, IntegerType, StructField, TimestampType
 
 
@@ -28,7 +28,7 @@ sparkcontext.setLogLevel("WARN")
 spark = pyspark.sql.SparkSession(sparkcontext.getOrCreate())
 
 json_schema = StructType([
-    StructField("order_id", IntegerType()),
+    StructField("order_id", StringType()),
     StructField("customer_id", StringType()),
     StructField("customer_name", StringType()),
     StructField("customer_address", StringType()),
@@ -36,67 +36,29 @@ json_schema = StructType([
     StructField("furniture", StringType()),
     StructField("color", StringType()),
     StructField("price", IntegerType()),
-    StructField("timestamp", TimestampType())
+    StructField("ts", TimestampType())
 ])
 
 stream_data = (
-    spark.readStream.format("kafka")
-    .option("kafka.bootstrap.servers", f"{kafka_host}:9092")
-    .option("subscribe", kafka_topic)
-    .option("startingOffsets", "latest")
-    .load()
+    spark.readStream.format("kafka") \
+    .option("kafka.bootstrap.servers", f"{kafka_host}:9092") \
+    .option("subscribe", kafka_topic) \
+    .option("startingOffsets", "latest") \
+    .load() \
+    .selectExpr("CAST(value AS STRING) as string").select(from_json("string", schema=json_schema).alias("data")).select("data.*")
+    .withWatermark('ts','3 minute') \
+    .groupBy(window('ts', '3 minute')) \
+    #.count() \
+    .agg(count('price').alias('Total Harga'))
 )
 
-stream_df_json = stream_data.select(
-    from_json(col("value").cast("string"), json_schema).alias("data")
-)
-
-stream_df = stream_df_json.select("data.*")
-
-(
-    stream_df.writeStream.format("console")
-    .outputMode("append")
-    .start()
-    .awaitTermination()
-)
+stream_data.writeStream.foreachBatch(lambda batch_df, batch_id: 
+    batch_df.write.format("complete")
+).start().awaitTermination()
 
 # (
-#     stream_data.selectExpr("CAST(value AS STRING)")
-#     .writeStream.format("console")
+#     stream_data.writeStream.format("console")
 #     .outputMode("append")
-#     .start()
-#     .awaitTermination()
-# )
-
-#aggregated_df = stream_df.groupBy(window(col('timestamp'), "10 minutes")).agg({
-#["order_id","customer_id","customer_name","customer_address","customer_country","furniture","color","price"]: "sum"})
-
-# aggregated_df = (
-#     stream_df.groupBy(window(col('timestamp'), "10 minutes"))
-#     .agg(
-#         pyspark_sum("order_id"),
-#         pyspark_sum("customer_id"),
-#         pyspark_sum("customer_name"),
-#         pyspark_sum("customer_address"),
-#         pyspark_sum("customer_country"),
-#         pyspark_sum("furniture"),
-#         pyspark_sum("color"),
-#         pyspark_sum("price")
-#     )
-# )
-
-# (
-#     aggregated_df.selectExpr("CAST(value AS STRING)")
-#     .writeStream.format("console")
-#     .outputMode("append")
-#     .start()
-#     .awaitTermination()
-# )
-
-
-# query = (
-#     aggregated_df.writeStream.format("console")
-#     .outputMode("complete")  # OutputMode sesuai kebutuhan kamu (complete, append, atau update)
 #     .start()
 #     .awaitTermination()
 # )

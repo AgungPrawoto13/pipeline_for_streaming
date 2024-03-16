@@ -85,4 +85,4 @@ spark-consume:
 	@echo '__________________________________________________________'
 	@docker exec ${SPARK_WORKER_CONTAINER_NAME}-1 \
 		spark-submit \
-		/spark-scripts/spark-event-consumer.py
+		/spark-scripts/spark-event-consumer-day-19.py

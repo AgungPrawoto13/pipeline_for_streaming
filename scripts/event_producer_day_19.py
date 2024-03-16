@@ -2,10 +2,11 @@ import json
 import uuid
 import os
 import json
+import time
+
 from dotenv import load_dotenv
 from pathlib import Path
-import time
-from kafka import KafkaProducer
+from kafka import KafkaProducer, KafkaAdminClient
 from faker import Faker
 from time import sleep
 from datetime import datetime, timedelta

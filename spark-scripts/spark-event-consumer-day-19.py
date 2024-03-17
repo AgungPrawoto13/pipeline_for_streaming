@@ -69,14 +69,14 @@ stream_data = (
     .option("failOnDataLoss", "false") 
     .load() 
     .selectExpr("CAST(value AS STRING) as string").select(from_json("string", schema=json_schema).alias("data")).select("data.*") 
-    # .withWatermark('ts','3 minute') 
-    # .groupBy(window('ts', '3 minute')) 
-    # .agg(count('price').alias('Total Harga'))
+    .withWatermark('ts','3 minute') 
+    .groupBy(window('ts', '3 minute')) 
+    .agg(count('price').alias('Total Harga'))
 )
 
-# stream_data.writeStream.foreachBatch(lambda batch_df, batch_id: 
-#     batch_df.write.format("complete")
-# ).start().awaitTermination()
+stream_data.writeStream.foreachBatch(lambda batch_df, batch_id: 
+    batch_df.write.format("complete")
+).start().awaitTermination()
 
 (
     stream_data.writeStream.format("console")

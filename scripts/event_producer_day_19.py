@@ -54,7 +54,7 @@ while True:
     _payload = json.dumps(json_data).encode("utf-8")
     print(_payload, flush=True)
     print("=-" * 5, flush=True)
-    response = producer.send(topic="gudkuesen", value=_payload)
+    response = producer.send(topic="rioAJG", value=_payload)
     print(response.get())
     print("=-" * 20, flush=True)
     sleep(3)

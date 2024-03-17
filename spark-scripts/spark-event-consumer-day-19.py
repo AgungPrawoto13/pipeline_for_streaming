@@ -1,6 +1,5 @@
 import pyspark
 import os
-#import psycopg2
 
 from dotenv import load_dotenv
 from pathlib import Path
@@ -20,29 +19,6 @@ postgre_user = os.getenv("POSTGRES_USER")
 postgre_pass = os.getenv("POSTGRES_PASSWORD")
 postgre_db = os.getenv("POSTGRES_DB")
 
-#connection database postgre
-# conn = psycopg2.connect(
-#    database = postgre_db, user = postgre_user, password = postgre_pass, host = postgre_host, port= '5432'
-# )
-
-# cursor = conn.cursor()
-
-#Creating Table Station_Status
-# cursor.execute("DROP TABLE IF EXISTS report")
-# sql ='''CREATE TABLE report(
-#     order_id VARCHAR NOT NULL,
-#     customer_id INT,
-#     customer_name VARCHAR,
-#     customer_address VARCHAR,
-#     customer_country VARCHAR,
-#     furniture VARCHAR,
-#     color VARCHAR,
-#     price INT, 
-#     ts TIMESTAMP
-# )'''
-# cursor.execute(sql)
-# conn.commit()
-
 spark_host = f"spark://{spark_hostname}:{spark_port}"
 
 os.environ[
@@ -54,12 +30,12 @@ sparkcontext = pyspark.SparkContext.getOrCreate(conf=(
     .SparkConf()
     .setAppName('DibimbingStreaming')
     .setMaster(spark_host)
-    .set('spark.jars','../../bitnami/spark/jars/postgresql-42.5.2.jar'))
+    .set('spark.jars','/opt/bitnami/spark/jars/postgresql-42.7.3.jar'))
 )
 sparkcontext.setLogLevel("WARN")
 spark = pyspark.sql.SparkSession(sparkcontext.getOrCreate())
 
-jdbc_url = f'jdbc:postgresql://localhost/{postgre_db}'
+jdbc_url = 'jdbc:postgresql://127.0.0.1:5432/postgres'
 jdbc_properties = {
     'user': postgre_user,
     'password': postgre_pass,
